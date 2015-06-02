@@ -1,12 +1,12 @@
-# slack-overflow
+# slackzon
 
-A programmer's best friend, now in Slack. Search StackOverflow right from Slack without coming off as dumb.
+Simple Amazon Product Search in Slack. All searches are private and only visible to you.
 
-![](http://i.imgur.com/c9HuKw8.gif)
+<< DEMO >>
 
 ## Usage
 
-From any Slack channel, just type `/overflow [search terms]`. The questions will be shown on the same channel visible just to you.
+From any Slack channel, just type `/amazon [search terms]`. The products will be shown on the same channel visible just to you.
 
 ## Integrate with your team
 
@@ -14,13 +14,13 @@ From any Slack channel, just type `/overflow [search terms]`. The questions will
 2. Click on **Configure Integrations**.
 3. Scroll all the way down to **DIY Integrations & Customizations section**.
 4. Click on **Add** next to **Slash Commands**.
-  - Command: `/overflow`
-  - URL: `http://so.goel.io/overflow`
+  - Command: `/amazon`
+  - URL: `http://amazon.goel.io/search`
   - Method: `POST`
   - For the **Autocomplete help text**, check to show the command in autocomplete list.
-    - Description: `A programmer's best friend, now in Slack.`
+    - Description: `Simple Amazon Product Search in Slack.`
     - Usage hint: `[search terms]`
-  - Descriptive Label: `Search StackOverflow`
+  - Descriptive Label: `Search Amazon`
 
 ## Developing
 
@@ -36,4 +36,4 @@ $ python app.py
 
 ## Contributing
 
-- Please use the [issue tracker](https://github.com/karan/slack-overflow/issues) to report any bugs or file feature requests.
+- Please use the [issue tracker](https://github.com/karan/slackzon/issues) to report any bugs or file feature requests.
