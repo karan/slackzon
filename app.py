@@ -57,7 +57,6 @@ def search():
 
     try:
         xml = amazon_client.ItemSearch(Keywords=text, SearchIndex='All')
-        print xml
     except UnicodeEncodeError:
         return Response(('Only English language is supported. '
                          '%s is not valid input.' % text),
@@ -89,4 +88,4 @@ def hello():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port)
