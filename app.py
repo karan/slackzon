@@ -34,30 +34,38 @@ amazon_client = bottlenose.Amazon(AWS_ACCESS_KEY_ID,
 
 
 def get_response_string(item_xml):
-    print item_xml
-    url = item_xml.detailpageurl.string
-    title = item_xml.itemattributes.title.string
-    manufacturer = item_xml.itemattributes.manufacturer.string
-    return "<%s|%s> (by %s)" % (url, title, manufacturer)
+    try:
+        item = amazon_client.ItemLookup(ItemId=item_xml.asin.string,
+                                        ResponseGroup='Offers',
+                                        MerchantId='All')
+        price = item.find('formattedprice').string
+        url = item_xml.detailpageurl.string
+        title = item_xml.itemattributes.title.string
+        manufacturer = item_xml.itemattributes.manufacturer.string
+        return "*%s* <%s|%s> (by %s)" % (price, url, title, manufacturer)
+    except:
+        return ''
 
 
 @app.route('/search', methods=['post'])
 def search():
     '''
     Example:
-        /search kindle 3g
+        /amazon kindle 3g
     '''
     text = request.values.get('text')
 
     try:
-        xml = amazon_client.ItemSearch(Keywords='Kindle 3G', SearchIndex='All')
+        xml = amazon_client.ItemSearch(Keywords=text, SearchIndex='All')
+        print xml
     except UnicodeEncodeError:
         return Response(('Only English language is supported. '
                          '%s is not valid input.' % text),
                          content_type='text/plain; charset=utf-8')
 
 
-    resp = ['Amazon Top Products for "%s"\n' % text]
+    resp = [('Amazon Top Products for '
+             '"<%s|%s>"\n') % (xml.items.moresearchresultsurl.string, text)]
     products = xml.find_all('item')[:MAX_PRODUCTS]
     resp.extend(map(get_response_string, products))
 
