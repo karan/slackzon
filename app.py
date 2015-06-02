@@ -4,6 +4,7 @@ import os
 
 from bs4 import BeautifulSoup
 from flask import Flask, request, Response, redirect
+from mixpanel import Mixpanel
 import bottlenose
 
 try:
@@ -11,10 +12,12 @@ try:
     AWS_ACCESS_KEY_ID = config.aws['AWS_ACCESS_KEY_ID']
     AWS_SECRET_ACCESS_KEY = config.aws['AWS_SECRET_ACCESS_KEY']
     AWS_ASSOCIATE_TAG = config.aws['AWS_ASSOCIATE_TAG']
+    mixpanel_token = config.mixpanel['token']
 except:
     AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
     AWS_ASSOCIATE_TAG = os.environ.get('AWS_ASSOCIATE_TAG')
+    mixpanel_token = os.environ.get('MIXPANEL_TOKEN')
 
 
 if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ASSOCIATE_TAG]):
@@ -31,6 +34,7 @@ amazon_client = bottlenose.Amazon(AWS_ACCESS_KEY_ID,
                            AWS_SECRET_ACCESS_KEY,
                            AWS_ASSOCIATE_TAG,
                            Parser=BeautifulSoup)
+mp = Mixpanel(mixpanel_token)
 
 
 def get_response_string(item_xml):
@@ -62,6 +66,12 @@ def search():
                          '%s is not valid input.' % text),
                          content_type='text/plain; charset=utf-8')
 
+    mp.track(request.values.get('team_domain'), 'New Query', {
+            'channel_name': request.values.get('channel_name'),
+            'user_name': request.values.get('user_name'),
+            'text': text,
+            'products_length': len(xml.find_all('item'))
+        })
 
     resp = [('Amazon Top Products for '
              '"<%s|%s>"\n') % (xml.items.moresearchresultsurl.string, text)]
@@ -78,11 +88,13 @@ def search():
 
 @app.route('/amazon')
 def amazon():
+    mp.track(-1, 'Amazon Page')
     return redirect('http://amzn.to/1Gjm2pk', code=302)
 
 
 @app.route('/')
 def hello():
+    mp.track(-1, 'Homepage')
     return redirect('https://github.com/karan/slackzon')
 
 
