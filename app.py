@@ -1,70 +1,84 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 
 import os
 
+from bs4 import BeautifulSoup
 from flask import Flask, request, Response, redirect
-from stackexchange import Site, StackOverflow, Sort, DESC
+import bottlenose
 
 try:
     import config
-    se_key = config.stackexchange['api_key']
+    AWS_ACCESS_KEY_ID = config.aws['AWS_ACCESS_KEY_ID']
+    AWS_SECRET_ACCESS_KEY = config.aws['AWS_SECRET_ACCESS_KEY']
+    AWS_ASSOCIATE_TAG = config.aws['AWS_ASSOCIATE_TAG']
 except:
-    se_key = os.environ.get('SE_KEY')
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+    AWS_ASSOCIATE_TAG = os.environ.get('AWS_ASSOCIATE_TAG')
 
 
-if not se_key:
+if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ASSOCIATE_TAG]):
     import sys
     print 'No config.py file found. Exiting...'
     sys.exit(0)
 
 
-MAX_QUESTIONS = 5
+MAX_PRODUCTS = 5
 
 
 app = Flask(__name__)
-so = Site(StackOverflow, se_key)
+amazon_client = bottlenose.Amazon(AWS_ACCESS_KEY_ID,
+                           AWS_SECRET_ACCESS_KEY,
+                           AWS_ASSOCIATE_TAG,
+                           Parser=BeautifulSoup)
 
 
-def get_response_string(q):
-    q_data = q.json
-    check = ' :white_check_mark:' if q.json['is_answered'] else ''
-    return "|%d|%s <%s|%s> (%d answers)" % (q_data['score'], check, q.url,
-                                            q.title, q_data['answer_count'])
+def get_response_string(item_xml):
+    print item_xml
+    url = item_xml.detailpageurl.string
+    title = item_xml.itemattributes.title.string
+    manufacturer = item_xml.itemattributes.manufacturer.string
+    return "<%s|%s> (by %s)" % (url, title, manufacturer)
 
 
-@app.route('/overflow', methods=['post'])
-def overflow():
+@app.route('/search', methods=['post'])
+def search():
     '''
     Example:
-        /overflow python list comprehension
+        /search kindle 3g
     '''
     text = request.values.get('text')
 
     try:
-        qs = so.search(intitle=text, sort=Sort.Votes, order=DESC)
+        xml = amazon_client.ItemSearch(Keywords='Kindle 3G', SearchIndex='All')
     except UnicodeEncodeError:
         return Response(('Only English language is supported. '
                          '%s is not valid input.' % text),
                          content_type='text/plain; charset=utf-8')
 
 
-    resp_qs = ['Stack Overflow Top Questions for "%s"\n' % text]
-    resp_qs.extend(map(get_response_string, qs[:MAX_QUESTIONS]))
+    resp = ['Amazon Top Products for "%s"\n' % text]
+    products = xml.find_all('item')[:MAX_PRODUCTS]
+    resp.extend(map(get_response_string, products))
 
-    if len(resp_qs) is 1:
-        resp_qs.append(('No questions found. Please try a broader search or '
-                        'search directly on '
-                        '<https://stackoverflow.com|StackOverflow>.'))
+    if len(resp) is 1:
+        resp.append(('No products found. Please try a broader search or '
+                     'search directly on '
+                     '<https://amazon.goel.io/amazon|Amazon>.'))
 
-    return Response('\n'.join(resp_qs),
-                    content_type='text/plain; charset=utf-8')
+    return Response('\n'.join(resp), content_type='text/plain; charset=utf-8')
+
+
+@app.route('/amazon')
+def amazon():
+    return redirect('http://amzn.to/1Gjm2pk', code=302)
 
 
 @app.route('/')
 def hello():
-    return redirect('https://github.com/karan/slack-overflow')
+    return redirect('https://github.com/karan/slackzon')
 
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)

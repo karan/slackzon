@@ -24,7 +24,7 @@ From any Slack channel, just type `/amazon [search terms]`. The products will be
 
 ## Developing
 
-Add a `config.py` file based on `config.py.example` file. Grab your StackExchange key from http://stackapps.com/
+Add a `config.py` file based on `config.py.example` file. Grab your AWS credentials.
 
 ```python
 # Install python dependencies
