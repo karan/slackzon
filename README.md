@@ -2,7 +2,7 @@
 
 Simple Amazon Product Search in Slack. All searches are private and only visible to you.
 
-<< DEMO >>
+![](http://i.imgur.com/XO71JrY.gif)
 
 ## Usage
 
